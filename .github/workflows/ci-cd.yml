@@ -9,6 +9,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: Development
 
     env:
       IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/tenant
@@ -38,7 +39,6 @@ jobs:
       - name: Debug secrets
         run: |
           echo "Username length: ${#DOCKER_USERNAME}"
-          echo "Username : ${#DOCKER_USERNAME}"
 
       # Step 5: Log in to DockerHub
       - name: Log in to DockerHub
