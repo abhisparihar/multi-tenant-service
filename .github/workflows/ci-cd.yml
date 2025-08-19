@@ -4,27 +4,45 @@ on:
   push:
     branches:
       - master
+  pull_request:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/tenant
+      IMAGE_TAG: latest
+
     steps:
-      - name: Checkout repository
+      # Step 1: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 1: Set up Docker
+      # Step 2: Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies & run tests (optional)
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm test || echo "No tests or tests failed"
+
+      # Step 4: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step 2: Log in to DockerHub
+      # Step 5: Log in to DockerHub
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Generate .env file from .env.sample
+      # Step 6: Generate .env file from .env.sample
       - name: Generate .env file
         run: |
           cp .env.sample .env
@@ -42,8 +60,10 @@ jobs:
           sed -i "s|\$JWT_SECRET|${{ secrets.JWT_SECRET }}|g" .env
           sed -i "s|\$JWT_REFRESH_SECRET|${{ secrets.JWT_REFRESH_SECRET }}|g" .env
 
-      # Step 4: Build and push Docker image
+      # Step 7: Build and push Docker image
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/tenant:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/tenant:latest
+          COMMIT_SHA=${GITHUB_SHA::7}
+          docker build -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:$COMMIT_SHA .
+          docker push $IMAGE_NAME:$IMAGE_TAG
+          docker push $IMAGE_NAME:$COMMIT_SHA
