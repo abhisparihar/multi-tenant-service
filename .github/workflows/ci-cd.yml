@@ -28,7 +28,7 @@ jobs:
       # Step 3: Install dependencies & run tests (optional)
       - name: Install dependencies
         run: |
-          npm ci
+          npm install
           npm test || echo "No tests or tests failed"
 
       # Step 4: Set up Docker Buildx
