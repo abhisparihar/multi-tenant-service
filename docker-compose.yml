@@ -1,6 +1,6 @@
 services:
   api:
-    image: "${DOCKER_USERNAME}/tenant-api:latest"
+    image: "${DOCKER_USERNAME}/multi-tenant-service:latest"
     container_name: "tenant-api-server"
     build:
       dockerfile: Dockerfile
