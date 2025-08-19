@@ -1,0 +1,47 @@
+services:
+  api:
+    image: "tenant:latest"
+    container_name: "tenant-api-server"
+    build:
+      dockerfile: Dockerfile
+      context: ./
+    ports:
+      - "5000:80"
+    command: [ "sh", "start.sh" ]
+    restart: always
+    environment:
+      - NODE_ENV=development
+    # stop_grace_period: 30s
+    links:
+      - mongo
+      - redis
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+    - "./data/pm2logs:/root/.pm2/logs"
+    - "./data/logs:/usr/app/logs"
+    - "./data/uploads:/usr/app/public/images"
+    - "./data/private:/usr/app/private"
+  mongo:
+    image: "mongo:6.0-rc-jammy"
+    container_name: "tenant-mongodb"
+    ports:
+      - "27042:27017"
+    restart: always
+    volumes:
+      - "./data/mongodb:/data/db"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: admin
+
+  redis:
+    image: "redis:7.0"
+    container_name: "tenant-redis"
+    ports:
+      - "6359:6379"
+    restart: always
+    volumes:
+      - "./data/redis:/data"
+    command: redis-server --requirepass redis
