@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 1: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 2: Log in to DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Step 3: Generate .env file from .env.sample
+      - name: Generate .env file
+        run: |
+          cp .env.sample .env
+          sed -i "s|\$NODE_ENV|${{ secrets.NODE_ENV }}|g" .env
+          sed -i "s|\$PORT|${{ secrets.PORT }}|g" .env
+          sed -i "s|\$MONGO_INITDB_ROOT_USERNAME|${{ secrets.MONGO_INITDB_ROOT_USERNAME }}|g" .env
+          sed -i "s|\$MONGO_INITDB_ROOT_PASSWORD|${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}|g" .env
+          sed -i "s|\$MONGO_INITDB_DATABASE|${{ secrets.MONGO_INITDB_DATABASE }}|g" .env
+          sed -i "s|\$MONGO_PORT|${{ secrets.MONGO_PORT }}|g" .env
+          sed -i "s|\$MONGO_URI|${{ secrets.MONGO_URI }}|g" .env
+          sed -i "s|\$MONGODB_ROOT_URL|${{ secrets.MONGODB_ROOT_URL }}|g" .env
+          sed -i "s|\$REDIS_URL|${{ secrets.REDIS_URL }}|g" .env
+          sed -i "s|\$REDIS_PORT|${{ secrets.REDIS_PORT }}|g" .env
+          sed -i "s|\$REDIS_PASSWORD|${{ secrets.REDIS_PASSWORD }}|g" .env
+          sed -i "s|\$JWT_SECRET|${{ secrets.JWT_SECRET }}|g" .env
+          sed -i "s|\$JWT_REFRESH_SECRET|${{ secrets.JWT_REFRESH_SECRET }}|g" .env
+
+      # Step 4: Build and push Docker image
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/tenant:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/tenant:latest
